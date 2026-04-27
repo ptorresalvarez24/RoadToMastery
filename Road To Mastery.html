@@ -58,38 +58,13 @@
 </script>
 
 <script>
-  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-    "accentScheme": "Ink",
-    "fontDisplay": "Epilogue",
-    "fontBody": "Manrope",
-    "navShadow": true
-  }/*EDITMODE-END*/;
-
-  const jsxFiles = [
-    "tweaks-panel.jsx",
-    "components/data.jsx",
-    "components/ui.jsx",
-    "components/Dashboard.jsx",
-    "components/Timeline.jsx",
-    "components/WeekDetail.jsx",
-    "components/Resources.jsx",
-    "components/Portfolio.jsx",
-    "components/CaseStudy.jsx",
-    "components/App.jsx",
-  ];
-
-  const runJSXFile = (path) => {
-    const req = new XMLHttpRequest();
-    req.open("GET", path, false);
-    req.send(null);
-    if (req.status !== 200 && req.status !== 0) {
-      throw new Error(`Failed to load ${path} (${req.status})`);
-    }
-    const code = Babel.transform(req.responseText, { presets: ["react"] }).code;
-    (0, eval)(`${code}\n//# sourceURL=${path}`);
-  };
-
-  jsxFiles.forEach(runJSXFile);
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentScheme": "Ink",
+  "fontDisplay": "Epilogue",
+  "fontBody": "Manrope",
+  "navShadow": true
+}/*EDITMODE-END*/;
 </script>
+<script type="text/babel" data-presets="react" src="app.bundle.jsx"></script>
 </body>
 </html>
