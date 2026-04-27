@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Road To Mastery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Epilogue:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:               #f8f8f6;
+    --surface:          #f1f1ee;
+    --surface-elevated: #ffffff;
+    --border:           rgba(20,18,14,0.09);
+    --border-mid:       rgba(20,18,14,0.16);
+    --text-primary:     #141210;
+    --text-secondary:   #3c3830;
+    --text-dim:         #908880;
+    --accent-blue:      #5a87a8;
+    --accent-amber:     #b8923a;
+    --accent-teal:      #4e8f68;
+    --accent-terra:     #b05e48;
+    --font-display:     'Epilogue', sans-serif;
+    --font-head:        'Epilogue', sans-serif;
+    --font-body:        'Manrope', sans-serif;
+    --font-mono:        'JetBrains Mono', monospace;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--text-primary); }
+  body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
+  * { scrollbar-width: thin; scrollbar-color: rgba(20,18,14,0.15) transparent; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(20,18,14,0.15); border-radius: 3px; }
+  textarea, input { font-family: var(--font-body); color: var(--text-primary); }
+  textarea::placeholder, input::placeholder { color: var(--text-dim); }
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="components/data.jsx"></script>
+<script type="text/babel" src="components/ui.jsx"></script>
+<script type="text/babel" src="components/Dashboard.jsx"></script>
+<script type="text/babel" src="components/Timeline.jsx"></script>
+<script type="text/babel" src="components/WeekDetail.jsx"></script>
+<script type="text/babel" src="components/Resources.jsx"></script>
+<script type="text/babel" src="components/Portfolio.jsx"></script>
+<script type="text/babel" src="components/CaseStudy.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentScheme": "Ink",
+  "fontDisplay": "Epilogue",
+  "fontBody": "Manrope",
+  "navShadow": true
+}/*EDITMODE-END*/;
+</script>
+<script type="text/babel" src="components/App.jsx"></script>
+</body>
+</html>
