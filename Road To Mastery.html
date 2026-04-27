@@ -57,24 +57,39 @@
   }
 </script>
 
-<script type="text/babel" src="tweaks-panel.jsx"></script>
-<script type="text/babel" src="components/data.jsx"></script>
-<script type="text/babel" src="components/ui.jsx"></script>
-<script type="text/babel" src="components/Dashboard.jsx"></script>
-<script type="text/babel" src="components/Timeline.jsx"></script>
-<script type="text/babel" src="components/WeekDetail.jsx"></script>
-<script type="text/babel" src="components/Resources.jsx"></script>
-<script type="text/babel" src="components/Portfolio.jsx"></script>
-<script type="text/babel" src="components/CaseStudy.jsx"></script>
+<script>
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "accentScheme": "Ink",
+    "fontDisplay": "Epilogue",
+    "fontBody": "Manrope",
+    "navShadow": true
+  }/*EDITMODE-END*/;
 
-<script type="text/babel">
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "accentScheme": "Ink",
-  "fontDisplay": "Epilogue",
-  "fontBody": "Manrope",
-  "navShadow": true
-}/*EDITMODE-END*/;
+  const jsxFiles = [
+    "tweaks-panel.jsx",
+    "components/data.jsx",
+    "components/ui.jsx",
+    "components/Dashboard.jsx",
+    "components/Timeline.jsx",
+    "components/WeekDetail.jsx",
+    "components/Resources.jsx",
+    "components/Portfolio.jsx",
+    "components/CaseStudy.jsx",
+    "components/App.jsx",
+  ];
+
+  const runJSXFile = (path) => {
+    const req = new XMLHttpRequest();
+    req.open("GET", path, false);
+    req.send(null);
+    if (req.status !== 200 && req.status !== 0) {
+      throw new Error(`Failed to load ${path} (${req.status})`);
+    }
+    const code = Babel.transform(req.responseText, { presets: ["react"] }).code;
+    (0, eval)(`${code}\n//# sourceURL=${path}`);
+  };
+
+  jsxFiles.forEach(runJSXFile);
 </script>
-<script type="text/babel" src="components/App.jsx"></script>
 </body>
 </html>
