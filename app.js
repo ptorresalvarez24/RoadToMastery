@@ -82,6 +82,41 @@ function renderCurriculum() {
   });
 }
 
+
+function renderCurrentFocus() {
+  const nextWeek = curriculum.find((w) => !state.completedWeeks.includes(w.week)) || curriculum[curriculum.length - 1];
+  const related = state.updates
+    .filter((u) => u.week === nextWeek.week)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  $("currentWeekLabel").textContent = `Week ${nextWeek.week}`;
+  $("currentWeekTitle").textContent = nextWeek.title;
+  $("currentWeekOutput").textContent = nextWeek.output;
+  $("currentWeekBuild").textContent = related[0]
+    ? related[0].notes
+    : "No log for this week yet. Use Studio Manager to add your first build note and screenshots.";
+
+  const gallery = $("focusGallery");
+  gallery.innerHTML = "";
+
+  const images = related.flatMap((u) => u.files).filter((f) => f.dataUrl && f.type.startsWith("image/")).slice(0, 4);
+  if (!images.length) {
+    for (let i = 0; i < 4; i += 1) {
+      const ph = document.createElement("div");
+      ph.className = "focus-placeholder";
+      gallery.appendChild(ph);
+    }
+    return;
+  }
+
+  images.forEach((imgFile) => {
+    const img = document.createElement("img");
+    img.src = imgFile.dataUrl;
+    img.alt = imgFile.name;
+    gallery.appendChild(img);
+  });
+}
+
 function renderDashboard() {
   const completed = state.completedWeeks.length;
   const pct = Math.round((completed / curriculum.length) * 100);
@@ -91,6 +126,7 @@ function renderDashboard() {
   $("updatesCountStat").textContent = String(state.updates.length);
   $("programProgressLabel").textContent = `${pct}%`;
   $("programProgressBar").style.width = `${pct}%`;
+  renderCurrentFocus();
 }
 
 function makeFileChip(file) {
@@ -140,7 +176,7 @@ function renderUpdates() {
     return;
   }
 
-  filtered.forEach((u) => {
+  filtered.slice(0, 6).forEach((u) => {
       const card = document.createElement("article");
       card.className = "update-card";
       card.innerHTML = `
@@ -158,17 +194,6 @@ function renderUpdates() {
         card.appendChild(fileRow);
       }
 
-      const del = document.createElement("button");
-      del.className = "secondary";
-      del.textContent = "Delete";
-      del.addEventListener("click", () => {
-        state.updates = state.updates.filter((x) => x.id !== u.id);
-        saveState();
-        renderUpdates();
-        renderDashboard();
-      });
-      card.appendChild(del);
-
       list.appendChild(card);
     });
 }
@@ -185,7 +210,7 @@ function renderResources() {
     return;
   }
 
-  resources.forEach((r) => {
+  resources.slice(0, 6).forEach((r) => {
       const card = document.createElement("article");
       card.className = "resource-card";
       card.innerHTML = `
@@ -197,16 +222,6 @@ function renderResources() {
         ${r.link ? `<p><a href="${r.link}" target="_blank" rel="noreferrer">${r.link}</a></p>` : ""}
         ${r.notes ? `<p>${r.notes}</p>` : ""}
       `;
-      const del = document.createElement("button");
-      del.className = "secondary";
-      del.textContent = "Remove";
-      del.addEventListener("click", () => {
-        state.resources = state.resources.filter((x) => x.id !== r.id);
-        saveState();
-        renderResources();
-        renderDashboard();
-      });
-      card.appendChild(del);
       list.appendChild(card);
     });
 }
@@ -223,7 +238,7 @@ function renderPortfolio() {
     return;
   }
 
-  portfolio.forEach((p) => {
+  portfolio.slice(0, 3).forEach((p) => {
       const card = document.createElement("article");
       card.className = "portfolio-card";
       const firstImage = p.files.find((f) => f.dataUrl && f.type.startsWith("image/"));
@@ -240,17 +255,6 @@ function renderPortfolio() {
         p.files.forEach((file) => fileRow.appendChild(makeFileChip(file)));
         card.appendChild(fileRow);
       }
-
-      const del = document.createElement("button");
-      del.className = "secondary";
-      del.textContent = "Delete";
-      del.addEventListener("click", () => {
-        state.portfolio = state.portfolio.filter((x) => x.id !== p.id);
-        saveState();
-        renderPortfolio();
-        renderDashboard();
-      });
-      card.appendChild(del);
       list.appendChild(card);
     });
 }
