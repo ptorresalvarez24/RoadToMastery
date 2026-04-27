@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Road To Mastery</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>Road To Mastery</h1>
+        <p class="subtitle">Technical Artist Curriculum Tracker (12 Weeks)</p>
+      </div>
+      <div class="topbar-actions">
+        <button id="toggleThemeBtn" class="secondary">Toggle Theme</button>
+        <button id="exportDataBtn" class="secondary">Export Data</button>
+        <label class="file-btn secondary" for="importDataInput">Import Data</label>
+        <input id="importDataInput" type="file" accept="application/json" hidden />
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="card dashboard">
+        <h2>Progress Dashboard</h2>
+        <div class="stats-grid">
+          <article>
+            <p class="label">Weeks Completed</p>
+            <p id="weeksCompletedStat" class="value">0 / 12</p>
+          </article>
+          <article>
+            <p class="label">Portfolio Items</p>
+            <p id="portfolioCountStat" class="value">0</p>
+          </article>
+          <article>
+            <p class="label">Resources Saved</p>
+            <p id="resourceCountStat" class="value">0</p>
+          </article>
+          <article>
+            <p class="label">Weekly Updates</p>
+            <p id="updatesCountStat" class="value">0</p>
+          </article>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label-row">
+            <span>Core Program Progress</span>
+            <span id="programProgressLabel">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div id="programProgressBar"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Curriculum Tracker</h2>
+        <p class="muted">Check off each week once you have a clean and usable output.</p>
+        <div id="curriculumList" class="curriculum-list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Add Weekly Update</h2>
+        <form id="weeklyUpdateForm" class="stack">
+          <div class="grid-2">
+            <label>
+              Week
+              <select id="updateWeek" required></select>
+            </label>
+            <label>
+              Date
+              <input id="updateDate" type="date" required />
+            </label>
+          </div>
+          <label>
+            What did you work on?
+            <input id="updateTitle" type="text" placeholder="e.g. Week 6 Validator UI pass" required />
+          </label>
+          <label>
+            Notes
+            <textarea id="updateNotes" rows="4" placeholder="Wins, blockers, next action..." required></textarea>
+          </label>
+          <label>
+            Add files/screenshots (multiple)
+            <input id="updateFiles" type="file" multiple accept="image/*,.pdf,.txt,.md,.zip,.fbx,.hip,.ma,.mb,.blend" />
+          </label>
+          <button type="submit">Save Update</button>
+        </form>
+        <div class="toolbar-row">
+          <input id="updateSearch" type="search" placeholder="Search updates..." />
+        </div>
+        <div id="updatesList" class="stack"></div>
+      </section>
+
+      <section class="card">
+        <h2>Learning Resources</h2>
+        <form id="resourceForm" class="stack">
+          <div class="grid-2">
+            <label>
+              Curriculum Section
+              <select id="resourceSection" required>
+                <option value="">Choose section</option>
+                <option>Phase 1 — Houdini (Weeks 1–4)</option>
+                <option>Phase 2 — Python Tools (Weeks 5–8)</option>
+                <option>Phase 3 — Shaders (Weeks 9–12)</option>
+                <option>Portfolio Assembly</option>
+                <option>Integrated Case Study (Optional)</option>
+              </select>
+            </label>
+            <label>
+              Resource Type
+              <select id="resourceType" required>
+                <option>Tutorial</option>
+                <option>Documentation</option>
+                <option>Course</option>
+                <option>Video</option>
+                <option>Article</option>
+                <option>Reference File</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            Title
+            <input id="resourceTitle" type="text" required />
+          </label>
+          <label>
+            Link
+            <input id="resourceLink" type="url" placeholder="https://..." />
+          </label>
+          <label>
+            Notes
+            <textarea id="resourceNotes" rows="3" placeholder="Why this resource matters"></textarea>
+          </label>
+          <button type="submit">Add Resource</button>
+        </form>
+        <div id="resourcesList" class="stack"></div>
+      </section>
+
+      <section class="card">
+        <h2>Portfolio Showcase</h2>
+        <p class="muted">Upload polished final versions of each major project.</p>
+        <form id="portfolioForm" class="stack">
+          <div class="grid-2">
+            <label>
+              Project Type
+              <select id="portfolioType" required>
+                <option>Procedural RPG Environment Generator</option>
+                <option>Artist Asset Validation and Export Tool</option>
+                <option>Optimized Stylized Material System</option>
+                <option>Integrated Technical Art Case Study (Optional)</option>
+              </select>
+            </label>
+            <label>
+              Completion Date
+              <input id="portfolioDate" type="date" required />
+            </label>
+          </div>
+          <label>
+            Project Summary
+            <textarea id="portfolioSummary" rows="4" required></textarea>
+          </label>
+          <label>
+            Demo / GitHub Link
+            <input id="portfolioLink" type="url" placeholder="https://..." />
+          </label>
+          <label>
+            Upload final media files
+            <input id="portfolioFiles" type="file" multiple accept="image/*,.pdf,.zip,.mp4,.mov,.webm" />
+          </label>
+          <button type="submit">Add Portfolio Entry</button>
+        </form>
+        <div id="portfolioList" class="stack portfolio-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Execution Rhythm</h2>
+        <ul class="rhythm-list">
+          <li><strong>Mon:</strong> Primary focus (build)</li>
+          <li><strong>Tue:</strong> Theory + small practice</li>
+          <li><strong>Wed:</strong> Build</li>
+          <li><strong>Thu:</strong> Build (longer session)</li>
+          <li><strong>Fri:</strong> Documentation + cleanup</li>
+          <li><strong>Sat:</strong> Deep work (2–4h)</li>
+          <li><strong>Sun:</strong> Rest / planning (30m)</li>
+        </ul>
+      </section>
+    </main>
+
+    <template id="filePreviewTemplate">
+      <div class="file-chip">
+        <img alt="Preview" hidden />
+        <span class="filename"></span>
+      </div>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
