@@ -131,10 +131,16 @@ function renderUpdates() {
   const list = $("updatesList");
   list.innerHTML = "";
 
-  state.updates
+  const filtered = state.updates
     .filter((u) => [u.title, u.notes, `week ${u.week}`].join(" ").toLowerCase().includes(q))
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .forEach((u) => {
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  if (!filtered.length) {
+    list.innerHTML = `<article class="update-card"><p class="small">No weekly logs yet. Add your first progress update.</p></article>`;
+    return;
+  }
+
+  filtered.forEach((u) => {
       const card = document.createElement("article");
       card.className = "update-card";
       card.innerHTML = `
@@ -171,9 +177,15 @@ function renderResources() {
   const list = $("resourcesList");
   list.innerHTML = "";
 
-  state.resources
-    .sort((a, b) => a.section.localeCompare(b.section))
-    .forEach((r) => {
+  const resources = state.resources
+    .sort((a, b) => a.section.localeCompare(b.section));
+
+  if (!resources.length) {
+    list.innerHTML = `<article class="resource-card"><p class="small">No resources saved yet. Add tutorials/docs you rely on.</p></article>`;
+    return;
+  }
+
+  resources.forEach((r) => {
       const card = document.createElement("article");
       card.className = "resource-card";
       card.innerHTML = `
@@ -203,9 +215,15 @@ function renderPortfolio() {
   const list = $("portfolioList");
   list.innerHTML = "";
 
-  state.portfolio
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .forEach((p) => {
+  const portfolio = state.portfolio
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  if (!portfolio.length) {
+    list.innerHTML = `<article class="portfolio-card"><p class="small">No published portfolio pieces yet. Upload your first polished project.</p></article>`;
+    return;
+  }
+
+  portfolio.forEach((p) => {
       const card = document.createElement("article");
       card.className = "portfolio-card";
       const firstImage = p.files.find((f) => f.dataUrl && f.type.startsWith("image/"));
@@ -340,8 +358,15 @@ function initActions() {
   });
 }
 
+function setDefaultDates() {
+  const today = new Date().toISOString().slice(0, 10);
+  $("updateDate").value = today;
+  $("portfolioDate").value = today;
+}
+
 function boot() {
   initWeekSelectors();
+  setDefaultDates();
   initForms();
   initActions();
   setTheme();
