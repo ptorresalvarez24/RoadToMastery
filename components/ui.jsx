@@ -438,6 +438,7 @@ function useWeekDetailState(weekNum, defaults) {
       notes: saved.notes ?? defaults.notes ?? "",
       tasks: saved.tasks ?? defaults.tasks,
       devlogs: saved.devlogs ?? defaults.devlogs,
+      media: saved.media ?? defaults.media ?? [],
     };
   });
 
@@ -448,6 +449,7 @@ function useWeekDetailState(weekNum, defaults) {
       notes: saved.notes ?? defaults.notes ?? "",
       tasks: saved.tasks ?? defaults.tasks,
       devlogs: saved.devlogs ?? defaults.devlogs,
+      media: saved.media ?? defaults.media ?? [],
     });
   }, [weekNum, defaults]));
 

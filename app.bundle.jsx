@@ -1127,6 +1127,7 @@ function useWeekDetailState(weekNum, defaults) {
       notes: saved.notes ?? defaults.notes ?? "",
       tasks: saved.tasks ?? defaults.tasks,
       devlogs: saved.devlogs ?? defaults.devlogs,
+      media: saved.media ?? defaults.media ?? [],
     };
   });
 
@@ -1137,6 +1138,7 @@ function useWeekDetailState(weekNum, defaults) {
       notes: saved.notes ?? defaults.notes ?? "",
       tasks: saved.tasks ?? defaults.tasks,
       devlogs: saved.devlogs ?? defaults.devlogs,
+      media: saved.media ?? defaults.media ?? [],
     });
   }, [weekNum, defaults]));
 
@@ -1174,8 +1176,9 @@ function useCurrentWeek() {
 }
 
 function Dashboard({ navigate }) {
+  const { liveWeeks } = useWeekProgress();
   const [currentWeekNum, setCurrentWeek] = useCurrentWeek();
-  const currentWeek = WEEKS[currentWeekNum - 1] || WEEKS[0];
+  const currentWeek = liveWeeks[currentWeekNum - 1] || liveWeeks[0];
   const phase = PHASES[currentWeek.phase - 1];
 
   const phaseColors = [
@@ -1243,10 +1246,10 @@ function Dashboard({ navigate }) {
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, alignItems: "baseline" }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-dim)", letterSpacing: "0.12em", textTransform: "uppercase" }}>12-Week Progress</span>
             <span style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-              {Math.round((WEEKS.filter(w => w.status === "complete").length / 12) * 100)}% complete
+              {Math.round((liveWeeks.filter(w => w.status === "complete").length / 12) * 100)}% complete
             </span>
           </div>
-          <ProgressBar value={Math.round((WEEKS.filter(w => w.status === "complete").length / 12) * 100)} color={phase.color} height={3} />
+          <ProgressBar value={Math.round((liveWeeks.filter(w => w.status === "complete").length / 12) * 100)} color={phase.color} height={3} />
           <div style={{ display: "flex", marginTop: 8 }}>
             {PHASES.map((p, i) => (
               <div key={i} style={{ flex: 1, paddingRight: i < 2 ? 2 : 0 }}>
@@ -1266,7 +1269,7 @@ function Dashboard({ navigate }) {
             <div style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.03em", lineHeight: 1 }}>
               Week {currentWeekNum}
               <span style={{ fontFamily: "var(--font-body)", fontWeight: 400, fontSize: 13, color: "var(--text-dim)", marginLeft: 10, letterSpacing: 0 }}>
-                {WEEKS[currentWeekNum - 1]?.title}
+                {liveWeeks[currentWeekNum - 1]?.title}
               </span>
             </div>
           </div>
@@ -1274,7 +1277,7 @@ function Dashboard({ navigate }) {
           {/* Week pills grid */}
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-              {WEEKS.map((w) => {
+              {liveWeeks.map((w) => {
                 const p = PHASES[w.phase - 1];
                 const isCurrent = w.week === currentWeekNum;
                 const isDone = w.status === "complete";
@@ -1368,7 +1371,7 @@ function Dashboard({ navigate }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
           {PHASES.map((p, i) => {
             const c = phaseColors[i];
-            const done = WEEKS.filter(w => w.phase === p.id && w.status === "complete").length;
+            const done = liveWeeks.filter(w => w.phase === p.id && w.status === "complete").length;
             return (
               <div key={p.id} onClick={() => navigate("timeline")} style={{
                 background: c.bg, padding: "40px 36px 36px",
@@ -1525,7 +1528,8 @@ window.Dashboard = Dashboard;
 // ─── Timeline · Editorial Edition ──────────────────────────────────────
 function Timeline({ navigate }) {
   const [filter, setFilter] = React.useState(0);
-  const filtered = filter === 0 ? WEEKS : WEEKS.filter(w => w.phase === filter);
+  const { liveWeeks } = useWeekProgress();
+  const filtered = filter === 0 ? liveWeeks : liveWeeks.filter(w => w.phase === filter);
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "56px 48px 96px" }}>
@@ -1553,7 +1557,7 @@ function Timeline({ navigate }) {
 
       {PHASES.filter(p => filter === 0 || p.id === filter).map(phase => {
         const phaseWeeks = filtered.filter(w => w.phase === phase.id);
-        const done = WEEKS.filter(w => w.phase === phase.id && w.status === "complete").length;
+        const done = liveWeeks.filter(w => w.phase === phase.id && w.status === "complete").length;
         const pct = Math.round((done / 4) * 100);
 
         return (
@@ -1666,8 +1670,11 @@ function WeekDetail({ navigate, weekNum = 3 }) {
   const [tab, setTab] = React.useState("overview");
   const [completion, setCompletion] = React.useState(initialCompletion);
   const devlogs = weekState.devlogs || defaultDevlogs;
+  const media = weekState.media || [];
   const [newEntry, setNewEntry] = React.useState("");
   const [newDay, setNewDay] = React.useState("");
+  const fileInputRef = React.useRef(null);
+  const weekStatus = computeStatus(completion);
 
   React.useEffect(() => {
     const live = getCompletion(w.week);
@@ -1708,7 +1715,7 @@ function WeekDetail({ navigate, weekNum = 3 }) {
       <div style={{ marginBottom: 40, paddingBottom: 40, borderBottom: "1px solid var(--border)" }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
           <PhasePill phase={w.phase} />
-          <Badge label={w.status} />
+          <Badge label={weekStatus} />
           {w.week === STATS.currentWeek && (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: phase.color, padding: "3px 8px", background: phase.colorDim, borderRadius: 2, letterSpacing: "0.1em", textTransform: "uppercase" }}>Current Week</span>
           )}
@@ -1828,14 +1835,74 @@ function WeekDetail({ navigate, weekNum = 3 }) {
 
       {tab === "gallery" && (
         <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            style={{ display: "none" }}
+            onChange={async (e) => {
+              const files = Array.from(e.target.files || []);
+              if (files.length === 0) return;
+              const uploaded = [];
+              for (const file of files) {
+                const data = await new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = () => resolve(reader.result);
+                  reader.onerror = reject;
+                  reader.readAsDataURL(file);
+                });
+                let item = {
+                  id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                  name: file.name,
+                  type: file.type,
+                  url: data,
+                };
+                try {
+                  const res = await fetch("/api/upload", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: file.name, type: file.type, data }),
+                  });
+                  if (res.ok) {
+                    const payload = await res.json();
+                    item = { ...item, url: payload.url || item.url, type: payload.type || item.type };
+                  }
+                } catch {
+                  // Local fallback: keep data URL.
+                }
+                uploaded.push(item);
+              }
+              patchWeekState({ media: [...media, ...uploaded] });
+              e.target.value = "";
+            }}
+          />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 28 }}>
-            {[...Array(6)].map((_, i) => (
+            {media.length === 0 && [...Array(6)].map((_, i) => (
               <Placeholder key={i} label={i < 2 ? "Screenshot" : "Drop here"} width="100%" height={170} color="#e0d8cc" style={{ width: "100%", borderRadius: 6, border: "1px dashed var(--border-mid)" }} />
+            ))}
+            {media.map((m) => (
+              <Card key={m.id} style={{ padding: 8 }}>
+                <div style={{ position: "relative" }}>
+                  {m.type?.startsWith("video/") ? (
+                    <video src={m.url} controls style={{ width: "100%", height: 170, objectFit: "cover", borderRadius: 4, background: "#000" }} />
+                  ) : (
+                    <img src={m.url} alt={m.name} style={{ width: "100%", height: 170, objectFit: "cover", borderRadius: 4 }} />
+                  )}
+                  <button
+                    onClick={() => patchWeekState({ media: media.filter(x => x.id !== m.id) })}
+                    style={{ position: "absolute", top: 6, right: 6, border: "none", borderRadius: 3, background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 11, padding: "3px 6px" }}
+                  >
+                    Remove
+                  </button>
+                </div>
+                <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
+              </Card>
             ))}
           </div>
           <div style={{ border: "2px dashed var(--border-mid)", borderRadius: 6, padding: 40, textAlign: "center" }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-dim)", marginBottom: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>Upload screenshots · videos · node graphs</div>
-            <Btn variant="secondary">+ Add Files</Btn>
+            <Btn variant="secondary" onClick={() => fileInputRef.current?.click()}>+ Add Files</Btn>
           </div>
         </div>
       )}

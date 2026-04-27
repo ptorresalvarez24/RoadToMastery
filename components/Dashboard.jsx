@@ -15,8 +15,9 @@ function useCurrentWeek() {
 }
 
 function Dashboard({ navigate }) {
+  const { liveWeeks } = useWeekProgress();
   const [currentWeekNum, setCurrentWeek] = useCurrentWeek();
-  const currentWeek = WEEKS[currentWeekNum - 1] || WEEKS[0];
+  const currentWeek = liveWeeks[currentWeekNum - 1] || liveWeeks[0];
   const phase = PHASES[currentWeek.phase - 1];
 
   const phaseColors = [
@@ -84,10 +85,10 @@ function Dashboard({ navigate }) {
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, alignItems: "baseline" }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-dim)", letterSpacing: "0.12em", textTransform: "uppercase" }}>12-Week Progress</span>
             <span style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-              {Math.round((WEEKS.filter(w => w.status === "complete").length / 12) * 100)}% complete
+              {Math.round((liveWeeks.filter(w => w.status === "complete").length / 12) * 100)}% complete
             </span>
           </div>
-          <ProgressBar value={Math.round((WEEKS.filter(w => w.status === "complete").length / 12) * 100)} color={phase.color} height={3} />
+          <ProgressBar value={Math.round((liveWeeks.filter(w => w.status === "complete").length / 12) * 100)} color={phase.color} height={3} />
           <div style={{ display: "flex", marginTop: 8 }}>
             {PHASES.map((p, i) => (
               <div key={i} style={{ flex: 1, paddingRight: i < 2 ? 2 : 0 }}>
@@ -107,7 +108,7 @@ function Dashboard({ navigate }) {
             <div style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.03em", lineHeight: 1 }}>
               Week {currentWeekNum}
               <span style={{ fontFamily: "var(--font-body)", fontWeight: 400, fontSize: 13, color: "var(--text-dim)", marginLeft: 10, letterSpacing: 0 }}>
-                {WEEKS[currentWeekNum - 1]?.title}
+                {liveWeeks[currentWeekNum - 1]?.title}
               </span>
             </div>
           </div>
@@ -115,7 +116,7 @@ function Dashboard({ navigate }) {
           {/* Week pills grid */}
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-              {WEEKS.map((w) => {
+              {liveWeeks.map((w) => {
                 const p = PHASES[w.phase - 1];
                 const isCurrent = w.week === currentWeekNum;
                 const isDone = w.status === "complete";
@@ -209,7 +210,7 @@ function Dashboard({ navigate }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
           {PHASES.map((p, i) => {
             const c = phaseColors[i];
-            const done = WEEKS.filter(w => w.phase === p.id && w.status === "complete").length;
+            const done = liveWeeks.filter(w => w.phase === p.id && w.status === "complete").length;
             return (
               <div key={p.id} onClick={() => navigate("timeline")} style={{
                 background: c.bg, padding: "40px 36px 36px",

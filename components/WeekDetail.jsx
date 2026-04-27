@@ -19,8 +19,11 @@ function WeekDetail({ navigate, weekNum = 3 }) {
   const [tab, setTab] = React.useState("overview");
   const [completion, setCompletion] = React.useState(initialCompletion);
   const devlogs = weekState.devlogs || defaultDevlogs;
+  const media = weekState.media || [];
   const [newEntry, setNewEntry] = React.useState("");
   const [newDay, setNewDay] = React.useState("");
+  const fileInputRef = React.useRef(null);
+  const weekStatus = computeStatus(completion);
 
   React.useEffect(() => {
     const live = getCompletion(w.week);
@@ -61,7 +64,7 @@ function WeekDetail({ navigate, weekNum = 3 }) {
       <div style={{ marginBottom: 40, paddingBottom: 40, borderBottom: "1px solid var(--border)" }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
           <PhasePill phase={w.phase} />
-          <Badge label={w.status} />
+          <Badge label={weekStatus} />
           {w.week === STATS.currentWeek && (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: phase.color, padding: "3px 8px", background: phase.colorDim, borderRadius: 2, letterSpacing: "0.1em", textTransform: "uppercase" }}>Current Week</span>
           )}
@@ -181,14 +184,74 @@ function WeekDetail({ navigate, weekNum = 3 }) {
 
       {tab === "gallery" && (
         <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            style={{ display: "none" }}
+            onChange={async (e) => {
+              const files = Array.from(e.target.files || []);
+              if (files.length === 0) return;
+              const uploaded = [];
+              for (const file of files) {
+                const data = await new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = () => resolve(reader.result);
+                  reader.onerror = reject;
+                  reader.readAsDataURL(file);
+                });
+                let item = {
+                  id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                  name: file.name,
+                  type: file.type,
+                  url: data,
+                };
+                try {
+                  const res = await fetch("/api/upload", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: file.name, type: file.type, data }),
+                  });
+                  if (res.ok) {
+                    const payload = await res.json();
+                    item = { ...item, url: payload.url || item.url, type: payload.type || item.type };
+                  }
+                } catch {
+                  // Local fallback: keep data URL.
+                }
+                uploaded.push(item);
+              }
+              patchWeekState({ media: [...media, ...uploaded] });
+              e.target.value = "";
+            }}
+          />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 28 }}>
-            {[...Array(6)].map((_, i) => (
+            {media.length === 0 && [...Array(6)].map((_, i) => (
               <Placeholder key={i} label={i < 2 ? "Screenshot" : "Drop here"} width="100%" height={170} color="#e0d8cc" style={{ width: "100%", borderRadius: 6, border: "1px dashed var(--border-mid)" }} />
+            ))}
+            {media.map((m) => (
+              <Card key={m.id} style={{ padding: 8 }}>
+                <div style={{ position: "relative" }}>
+                  {m.type?.startsWith("video/") ? (
+                    <video src={m.url} controls style={{ width: "100%", height: 170, objectFit: "cover", borderRadius: 4, background: "#000" }} />
+                  ) : (
+                    <img src={m.url} alt={m.name} style={{ width: "100%", height: 170, objectFit: "cover", borderRadius: 4 }} />
+                  )}
+                  <button
+                    onClick={() => patchWeekState({ media: media.filter(x => x.id !== m.id) })}
+                    style={{ position: "absolute", top: 6, right: 6, border: "none", borderRadius: 3, background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 11, padding: "3px 6px" }}
+                  >
+                    Remove
+                  </button>
+                </div>
+                <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
+              </Card>
             ))}
           </div>
           <div style={{ border: "2px dashed var(--border-mid)", borderRadius: 6, padding: 40, textAlign: "center" }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-dim)", marginBottom: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}>Upload screenshots · videos · node graphs</div>
-            <Btn variant="secondary">+ Add Files</Btn>
+            <Btn variant="secondary" onClick={() => fileInputRef.current?.click()}>+ Add Files</Btn>
           </div>
         </div>
       )}
