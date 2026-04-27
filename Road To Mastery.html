@@ -44,16 +44,15 @@
 
 <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
 <script>
-  if (!window.React || !window.ReactDOM || !window.Babel) {
+  if (!window.React || !window.ReactDOM) {
     document.getElementById("root").innerHTML = `
       <div style="max-width:680px;margin:56px auto;padding:24px;border:1px solid rgba(20,18,14,.14);background:#fff;font-family:Manrope,sans-serif;line-height:1.6">
         <h1 style="font-family:Epilogue,sans-serif;font-size:24px;margin:0 0 10px">Unable to load app dependencies</h1>
-        <p style="margin:0 0 10px">React and Babel CDN assets did not load, so the page could not render.</p>
+        <p style="margin:0 0 10px">React CDN assets did not load, so the page could not render.</p>
         <p style="margin:0">Serve this file over HTTP and verify internet access for <code>unpkg.com</code>.</p>
       </div>`;
-    throw new Error("Missing React/ReactDOM/Babel globals.");
+    throw new Error("Missing React/ReactDOM globals.");
   }
 </script>
 
@@ -65,6 +64,6 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "navShadow": true
 }/*EDITMODE-END*/;
 </script>
-<script type="text/babel" data-presets="react" src="app.bundle.jsx"></script>
+<script src="app.bundle.js"></script>
 </body>
 </html>

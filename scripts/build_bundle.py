@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Build a single JSX bundle for browser Babel runtime loading."""
+"""Build browser bundles from source JSX files."""
 
 from pathlib import Path
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-BUNDLE_PATH = ROOT / "app.bundle.jsx"
+JSX_BUNDLE_PATH = ROOT / "app.bundle.jsx"
+JS_BUNDLE_PATH = ROOT / "app.bundle.js"
 
 SOURCE_FILES = [
     "tweaks-panel.jsx",
@@ -33,8 +35,23 @@ def main() -> None:
         chunks.append(text.rstrip())
         chunks.append(f"// --- END {rel} ---")
         chunks.append("")
-    BUNDLE_PATH.write_text("\n".join(chunks) + "\n")
-    print(f"Wrote {BUNDLE_PATH.relative_to(ROOT)} from {len(SOURCE_FILES)} files.")
+    JSX_BUNDLE_PATH.write_text("\n".join(chunks) + "\n")
+    print(f"Wrote {JSX_BUNDLE_PATH.relative_to(ROOT)} from {len(SOURCE_FILES)} files.")
+
+    subprocess.run(
+        [
+            "npx",
+            "--yes",
+            "esbuild",
+            str(JSX_BUNDLE_PATH),
+            "--loader:.jsx=jsx",
+            "--format=iife",
+            f"--outfile={JS_BUNDLE_PATH}",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+    print(f"Wrote {JS_BUNDLE_PATH.relative_to(ROOT)}.")
 
 
 if __name__ == "__main__":

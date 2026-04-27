@@ -1,14 +1,15 @@
 # Road To Mastery
 
-Single-page React prototype loaded directly in the browser with Babel standalone.
+Single-page React prototype loaded directly in the browser.
 
 ## Project Layout
 
 - `Road To Mastery.html` — main entry page.
-- `app.bundle.jsx` — generated JSX bundle loaded by the HTML page.
+- `app.bundle.jsx` — generated intermediate JSX bundle from source files.
+- `app.bundle.js` — generated browser-ready bundle loaded by the HTML page.
 - `components/` — feature/page components and shared data.
 - `tweaks-panel.jsx` — reusable tweak controls.
-- `scripts/build_bundle.py` — regenerates `app.bundle.jsx` from source files.
+- `scripts/build_bundle.py` — regenerates `app.bundle.jsx` and `app.bundle.js` from source files.
 
 ## Run locally
 
