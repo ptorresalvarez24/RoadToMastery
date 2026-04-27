@@ -6,7 +6,7 @@
 <title>Road To Mastery</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Epilogue:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Epilogue:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -42,21 +42,21 @@
 <body>
 <div id="root"></div>
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script>
+  if (!window.React || !window.ReactDOM) {
+    document.getElementById("root").innerHTML = `
+      <div style="max-width:680px;margin:56px auto;padding:24px;border:1px solid rgba(20,18,14,.14);background:#fff;font-family:Manrope,sans-serif;line-height:1.6">
+        <h1 style="font-family:Epilogue,sans-serif;font-size:24px;margin:0 0 10px">Unable to load app dependencies</h1>
+        <p style="margin:0 0 10px">React CDN assets did not load, so the page could not render.</p>
+        <p style="margin:0">Run <code>python serve.py</code> and verify internet access for <code>unpkg.com</code>.</p>
+      </div>`;
+    throw new Error("Missing React/ReactDOM globals.");
+  }
+</script>
 
-<script type="text/babel" src="tweaks-panel.jsx"></script>
-<script type="text/babel" src="components/data.jsx"></script>
-<script type="text/babel" src="components/ui.jsx"></script>
-<script type="text/babel" src="components/Dashboard.jsx"></script>
-<script type="text/babel" src="components/Timeline.jsx"></script>
-<script type="text/babel" src="components/WeekDetail.jsx"></script>
-<script type="text/babel" src="components/Resources.jsx"></script>
-<script type="text/babel" src="components/Portfolio.jsx"></script>
-<script type="text/babel" src="components/CaseStudy.jsx"></script>
-
-<script type="text/babel">
+<script>
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "accentScheme": "Ink",
   "fontDisplay": "Epilogue",
@@ -64,6 +64,6 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "navShadow": true
 }/*EDITMODE-END*/;
 </script>
-<script type="text/babel" src="components/App.jsx"></script>
+<script src="app.bundle.js"></script>
 </body>
 </html>

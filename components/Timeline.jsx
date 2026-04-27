@@ -1,7 +1,8 @@
 // ─── Timeline · Editorial Edition ──────────────────────────────────────
 function Timeline({ navigate }) {
   const [filter, setFilter] = React.useState(0);
-  const filtered = filter === 0 ? WEEKS : WEEKS.filter(w => w.phase === filter);
+  const { liveWeeks } = useWeekProgress();
+  const filtered = filter === 0 ? liveWeeks : liveWeeks.filter(w => w.phase === filter);
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "56px 48px 96px" }}>
@@ -29,7 +30,7 @@ function Timeline({ navigate }) {
 
       {PHASES.filter(p => filter === 0 || p.id === filter).map(phase => {
         const phaseWeeks = filtered.filter(w => w.phase === phase.id);
-        const done = WEEKS.filter(w => w.phase === phase.id && w.status === "complete").length;
+        const done = liveWeeks.filter(w => w.phase === phase.id && w.status === "complete").length;
         const pct = Math.round((done / 4) * 100);
 
         return (

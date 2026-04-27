@@ -106,7 +106,7 @@ function CaseStudy({ navigate }) {
               { step: "03", title: "Material Assignment",    desc: "Optimized master material with ORM-packed textures, atlas support, and instanced materials.",       color: "#8aaa90" },
               { step: "04", title: "Engine Integration",     desc: "LODs, collision, and material instances in UE5. Final profiling confirms optimization targets hit.", color: "#c08070" },
             ].map((s, i) => (
-              <div key={i} style={{ padding: "20px 24px", borderLeft: `3px solid ${s.color}`, background: "var(--surface-elevated)", borderRadius: "0 6px 6px 0", border: "1px solid var(--border)", borderLeft: `3px solid ${s.color}` }}>
+              <div key={i} style={{ padding: "20px 24px", background: "var(--surface-elevated)", borderRadius: "0 6px 6px 0", border: "1px solid var(--border)", borderLeft: `3px solid ${s.color}` }}>
                 <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
                   <span style={{ fontFamily: "var(--font-display)", fontSize: 22, fontStyle: "italic", fontWeight: 600, color: s.color, minWidth: 32, lineHeight: 1 }}>{s.step}</span>
                   <div>
