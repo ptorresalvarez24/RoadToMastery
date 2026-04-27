@@ -788,29 +788,84 @@
       }
     ));
   }
-  function useLocalResources() {
-    const STORAGE_KEY = "rtm_user_resources";
-    const read = () => {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      } catch {
-        return [];
-      }
+  const REPO_STATE_KEY = "rtm_repo_state_v1";
+  const REPO_STATE_ENDPOINT = "/api/state";
+  function defaultRepoState() {
+    return {
+      currentWeek: STATS.currentWeek,
+      userResources: [],
+      weekProgress: {},
+      weekDetails: {}
     };
-    const [userResources, setUserResources] = React.useState(read);
+  }
+  function readRepoState() {
+    try {
+      return { ...defaultRepoState(), ...JSON.parse(localStorage.getItem(REPO_STATE_KEY) || "{}") || {} };
+    } catch {
+      return defaultRepoState();
+    }
+  }
+  function writeRepoState(next) {
+    localStorage.setItem(REPO_STATE_KEY, JSON.stringify(next));
+  }
+  async function pushRepoState(next) {
+    writeRepoState(next);
+    try {
+      await fetch(REPO_STATE_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next)
+      });
+    } catch {
+    }
+  }
+  async function pullRepoState() {
+    try {
+      const res = await fetch(REPO_STATE_ENDPOINT, { cache: "no-store" });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data || typeof data !== "object") return null;
+      const merged = { ...defaultRepoState(), ...data };
+      writeRepoState(merged);
+      return merged;
+    } catch {
+      return null;
+    }
+  }
+  function patchRepoState(patch) {
+    const next = { ...readRepoState(), ...patch };
+    pushRepoState(next);
+    return next;
+  }
+  function useRepoSync(onRemoteState) {
+    React.useEffect(() => {
+      let alive = true;
+      pullRepoState().then((remote) => {
+        if (alive && remote && onRemoteState) onRemoteState(remote);
+      });
+      return () => {
+        alive = false;
+      };
+    }, [onRemoteState]);
+  }
+  function useLocalResources() {
+    const [userResources, setUserResources] = React.useState(() => readRepoState().userResources || []);
+    useRepoSync(React.useCallback((remote) => {
+      setUserResources(remote.userResources || []);
+    }, []));
     const addResource = (res) => {
-      const next = [...read(), { ...res, id: `user-${Date.now()}`, userAdded: true }];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      const next = [...readRepoState().userResources, { ...res, id: `user-${Date.now()}`, userAdded: true }];
+      patchRepoState({ userResources: next });
       setUserResources(next);
     };
     const removeResource = (id) => {
-      const next = read().filter((r) => r.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      const next = readRepoState().userResources.filter((r) => r.id !== id);
+      patchRepoState({ userResources: next });
       setUserResources(next);
     };
     const updateResource = (id, updates) => {
-      const next = read().map((r) => r.id === id ? { ...r, ...updates } : r);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      const next = readRepoState().userResources.map((r) => r.id === id ? { ...r, ...updates } : r);
+      patchRepoState({ userResources: next });
       setUserResources(next);
     };
     const allResources = React.useMemo(() => [...RESOURCES, ...userResources], [userResources]);
@@ -914,18 +969,13 @@
       }
     ))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement(Btn, { small: true, variant: "secondary", onClick: onClose }, "Cancel"), /* @__PURE__ */ React.createElement(Btn, { small: true, variant: "primary", onClick: handleAdd }, "Add Resource")));
   }
-  const PROGRESS_KEY = "rtm_week_progress";
   function readProgress() {
-    try {
-      const stored = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
-      const out = {};
-      WEEKS.forEach((w) => {
-        out[w.week] = stored[w.week] !== void 0 ? stored[w.week] : w.completion;
-      });
-      return out;
-    } catch {
-      return {};
-    }
+    const stored = readRepoState().weekProgress || {};
+    const out = {};
+    WEEKS.forEach((w) => {
+      out[w.week] = stored[w.week] !== void 0 ? stored[w.week] : w.completion;
+    });
+    return out;
   }
   function computeStatus(completion) {
     if (completion >= 100) return "complete";
@@ -934,10 +984,18 @@
   }
   function useWeekProgress() {
     const [progress, setProgressState] = React.useState(readProgress);
+    useRepoSync(React.useCallback((remote) => {
+      const stored = remote.weekProgress || {};
+      const out = {};
+      WEEKS.forEach((w) => {
+        out[w.week] = stored[w.week] !== void 0 ? stored[w.week] : w.completion;
+      });
+      setProgressState(out);
+    }, []));
     const setCompletion = (weekNum, value) => {
       const clamped = Math.max(0, Math.min(100, Math.round(value)));
       const next = { ...readProgress(), [weekNum]: clamped };
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(next));
+      patchRepoState({ weekProgress: next });
       setProgressState(next);
     };
     const getCompletion = (weekNum) => progress[weekNum] !== void 0 ? progress[weekNum] : 0;
@@ -949,12 +1007,49 @@
     }));
     return { progress, getCompletion, getStatus, setCompletion, liveWeeks };
   }
-  Object.assign(window, { Placeholder, ProgressBar, Badge, PhasePill, SectionHeader, Card, Divider, StatTile, Btn, Tag, WeekRing, STATUS_LABELS, useLocalResources, AddResourceForm, useWeekProgress, computeStatus });
+  function useWeekDetailState(weekNum, defaults) {
+    const readWeek = React.useCallback(() => {
+      const all = readRepoState().weekDetails || {};
+      return all[String(weekNum)] || {};
+    }, [weekNum]);
+    const [state, setState] = React.useState(() => {
+      const saved = readWeek();
+      return {
+        notes: saved.notes ?? defaults.notes ?? "",
+        tasks: saved.tasks ?? defaults.tasks,
+        devlogs: saved.devlogs ?? defaults.devlogs
+      };
+    });
+    useRepoSync(React.useCallback((remote) => {
+      const saved = (remote.weekDetails || {})[String(weekNum)];
+      if (!saved) return;
+      setState({
+        notes: saved.notes ?? defaults.notes ?? "",
+        tasks: saved.tasks ?? defaults.tasks,
+        devlogs: saved.devlogs ?? defaults.devlogs
+      });
+    }, [weekNum, defaults]));
+    const patchWeek = (patch) => {
+      setState((prev) => {
+        const merged = { ...prev, ...patch };
+        const all = { ...readRepoState().weekDetails || {} };
+        all[String(weekNum)] = merged;
+        patchRepoState({ weekDetails: all });
+        return merged;
+      });
+    };
+    return [state, patchWeek];
+  }
+  Object.assign(window, { Placeholder, ProgressBar, Badge, PhasePill, SectionHeader, Card, Divider, StatTile, Btn, Tag, WeekRing, STATUS_LABELS, useLocalResources, AddResourceForm, useWeekProgress, useWeekDetailState, computeStatus, readRepoState, patchRepoState });
   function useCurrentWeek() {
-    const stored = parseInt(localStorage.getItem("rtm_current_week") || String(STATS.currentWeek), 10);
+    const stored = parseInt(String(readRepoState().currentWeek || STATS.currentWeek), 10);
     const [week, setWeekState] = React.useState(stored);
+    React.useEffect(() => {
+      const latest = parseInt(String(readRepoState().currentWeek || STATS.currentWeek), 10);
+      setWeekState(latest);
+    }, []);
     const setWeek = (n) => {
-      localStorage.setItem("rtm_current_week", String(n));
+      patchRepoState({ currentWeek: n });
       setWeekState(n);
     };
     return [week, setWeek];
@@ -1218,27 +1313,37 @@
   function WeekDetail({ navigate, weekNum = 3 }) {
     const w = WEEKS.find((x) => x.week === weekNum) || WEEKS[2];
     const phase = PHASES[w.phase - 1];
-    const [tasks, setTasks] = React.useState({
-      learn: w.objectives.map((o, i) => ({ id: i, label: o, done: w.completion === 100 })),
-      build: w.tasks.map((t, i) => ({ id: i, label: t, done: w.completion === 100 }))
-    });
-    const [notes, setNotes] = React.useState(w.notes || "");
-    const [tab, setTab] = React.useState("overview");
-    const [completion, setCompletion] = React.useState(w.completion);
-    const [devlogs, setDevlogs] = React.useState([
+    const { getCompletion, setCompletion: setWeekCompletion } = useWeekProgress();
+    const initialCompletion = getCompletion(w.week);
+    const defaultTasks = React.useMemo(() => ({
+      learn: w.objectives.map((o, i) => ({ id: i, label: o, done: initialCompletion === 100 })),
+      build: w.tasks.map((t, i) => ({ id: i, label: t, done: initialCompletion === 100 }))
+    }), [w.week]);
+    const defaultDevlogs = React.useMemo(() => [
       { id: 1, day: "Day 1", note: "Started SOP setup. Attribute wrangle basics solid." },
       { id: 2, day: "Day 3", note: "Slope masking working on terrain. Falloff still needs tuning." }
-    ]);
+    ], [w.week]);
+    const [weekState, patchWeekState] = useWeekDetailState(w.week, { notes: w.notes || "", tasks: defaultTasks, devlogs: defaultDevlogs });
+    const tasks = weekState.tasks || defaultTasks;
+    const notes = weekState.notes || "";
+    const [tab, setTab] = React.useState("overview");
+    const [completion, setCompletion] = React.useState(initialCompletion);
+    const devlogs = weekState.devlogs || defaultDevlogs;
     const [newEntry, setNewEntry] = React.useState("");
     const [newDay, setNewDay] = React.useState("");
+    React.useEffect(() => {
+      const live = getCompletion(w.week);
+      setCompletion(live);
+    }, [w.week]);
     const addDevlog = () => {
       if (!newEntry.trim()) return;
-      setDevlogs((prev) => [...prev, { id: Date.now(), day: newDay.trim() || `Day ${prev.length + 1}`, note: newEntry.trim() }]);
+      const next = [...devlogs, { id: Date.now(), day: newDay.trim() || `Day ${devlogs.length + 1}`, note: newEntry.trim() }];
+      patchWeekState({ devlogs: next });
       setNewEntry("");
       setNewDay("");
     };
-    const removeDevlog = (id) => setDevlogs((prev) => prev.filter((e) => e.id !== id));
-    const toggleTask = (group, id) => setTasks((prev) => ({ ...prev, [group]: prev[group].map((t) => t.id === id ? { ...t, done: !t.done } : t) }));
+    const removeDevlog = (id) => patchWeekState({ devlogs: devlogs.filter((e) => e.id !== id) });
+    const toggleTask = (group, id) => patchWeekState({ tasks: { ...tasks, [group]: tasks[group].map((t) => t.id === id ? { ...t, done: !t.done } : t) } });
     const { allResources, addResource, removeResource } = useLocalResources();
     const [showAddResource, setShowAddResource] = React.useState(false);
     const tabs = ["overview", "progress", "gallery", "resources"];
@@ -1274,7 +1379,11 @@
         max: 100,
         step: 5,
         value: completion,
-        onChange: (e) => setCompletion(Number(e.target.value)),
+        onChange: (e) => {
+          const next = Number(e.target.value);
+          setCompletion(next);
+          setWeekCompletion(w.week, next);
+        },
         style: {
           width: "100%",
           marginTop: 10,
@@ -1326,7 +1435,7 @@
       "textarea",
       {
         value: notes,
-        onChange: (e) => setNotes(e.target.value),
+        onChange: (e) => patchWeekState({ notes: e.target.value }),
         placeholder: "Document your progress this week...",
         style: { ...inputStyle, minHeight: 110 }
       }

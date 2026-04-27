@@ -174,32 +174,96 @@ function WeekRing({ completion, color = "var(--accent-blue)", size = 36 }) {
   );
 }
 
-// ─── Shared resource store (localStorage) ──────────────────────────────
-function useLocalResources() {
-  const STORAGE_KEY = "rtm_user_resources";
+// ─── Shared persistent state (repo API + local fallback) ───────────────
+const REPO_STATE_KEY = "rtm_repo_state_v1";
+const REPO_STATE_ENDPOINT = "/api/state";
 
-  const read = () => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-    catch { return []; }
+function defaultRepoState() {
+  return {
+    currentWeek: STATS.currentWeek,
+    userResources: [],
+    weekProgress: {},
+    weekDetails: {},
   };
+}
 
-  const [userResources, setUserResources] = React.useState(read);
+function readRepoState() {
+  try {
+    return { ...defaultRepoState(), ...(JSON.parse(localStorage.getItem(REPO_STATE_KEY) || "{}") || {}) };
+  } catch {
+    return defaultRepoState();
+  }
+}
+
+function writeRepoState(next) {
+  localStorage.setItem(REPO_STATE_KEY, JSON.stringify(next));
+}
+
+async function pushRepoState(next) {
+  writeRepoState(next);
+  try {
+    await fetch(REPO_STATE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(next),
+    });
+  } catch {
+    // Offline / static mode: local state still persists.
+  }
+}
+
+async function pullRepoState() {
+  try {
+    const res = await fetch(REPO_STATE_ENDPOINT, { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || typeof data !== "object") return null;
+    const merged = { ...defaultRepoState(), ...data };
+    writeRepoState(merged);
+    return merged;
+  } catch {
+    return null;
+  }
+}
+
+function patchRepoState(patch) {
+  const next = { ...readRepoState(), ...patch };
+  pushRepoState(next);
+  return next;
+}
+
+function useRepoSync(onRemoteState) {
+  React.useEffect(() => {
+    let alive = true;
+    pullRepoState().then(remote => {
+      if (alive && remote && onRemoteState) onRemoteState(remote);
+    });
+    return () => { alive = false; };
+  }, [onRemoteState]);
+}
+
+// ─── Shared resource store (repo-backed) ───────────────────────────────
+function useLocalResources() {
+  const [userResources, setUserResources] = React.useState(() => readRepoState().userResources || []);
+  useRepoSync(React.useCallback((remote) => {
+    setUserResources(remote.userResources || []);
+  }, []));
 
   const addResource = (res) => {
-    const next = [...read(), { ...res, id: `user-${Date.now()}`, userAdded: true }];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    const next = [...readRepoState().userResources, { ...res, id: `user-${Date.now()}`, userAdded: true }];
+    patchRepoState({ userResources: next });
     setUserResources(next);
   };
 
   const removeResource = (id) => {
-    const next = read().filter(r => r.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    const next = readRepoState().userResources.filter(r => r.id !== id);
+    patchRepoState({ userResources: next });
     setUserResources(next);
   };
 
   const updateResource = (id, updates) => {
-    const next = read().map(r => r.id === id ? { ...r, ...updates } : r);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    const next = readRepoState().userResources.map(r => r.id === id ? { ...r, ...updates } : r);
+    patchRepoState({ userResources: next });
     setUserResources(next);
   };
 
@@ -316,19 +380,13 @@ function AddResourceForm({ weekNum, phase, onAdd, onClose }) {
   );
 }
 
-// ─── Shared week progress store ────────────────────────────────────────
-const PROGRESS_KEY = "rtm_week_progress";
-
 function readProgress() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
-    // Seed defaults from WEEKS data if not yet stored
-    const out = {};
-    WEEKS.forEach(w => {
-      out[w.week] = stored[w.week] !== undefined ? stored[w.week] : w.completion;
-    });
-    return out;
-  } catch { return {}; }
+  const stored = readRepoState().weekProgress || {};
+  const out = {};
+  WEEKS.forEach(w => {
+    out[w.week] = stored[w.week] !== undefined ? stored[w.week] : w.completion;
+  });
+  return out;
 }
 
 function computeStatus(completion) {
@@ -339,11 +397,19 @@ function computeStatus(completion) {
 
 function useWeekProgress() {
   const [progress, setProgressState] = React.useState(readProgress);
+  useRepoSync(React.useCallback((remote) => {
+    const stored = remote.weekProgress || {};
+    const out = {};
+    WEEKS.forEach(w => {
+      out[w.week] = stored[w.week] !== undefined ? stored[w.week] : w.completion;
+    });
+    setProgressState(out);
+  }, []));
 
   const setCompletion = (weekNum, value) => {
     const clamped = Math.max(0, Math.min(100, Math.round(value)));
     const next = { ...readProgress(), [weekNum]: clamped };
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(next));
+    patchRepoState({ weekProgress: next });
     setProgressState(next);
   };
 
@@ -360,4 +426,42 @@ function useWeekProgress() {
   return { progress, getCompletion, getStatus, setCompletion, liveWeeks };
 }
 
-Object.assign(window, { Placeholder, ProgressBar, Badge, PhasePill, SectionHeader, Card, Divider, StatTile, Btn, Tag, WeekRing, STATUS_LABELS, useLocalResources, AddResourceForm, useWeekProgress, computeStatus });
+function useWeekDetailState(weekNum, defaults) {
+  const readWeek = React.useCallback(() => {
+    const all = readRepoState().weekDetails || {};
+    return all[String(weekNum)] || {};
+  }, [weekNum]);
+
+  const [state, setState] = React.useState(() => {
+    const saved = readWeek();
+    return {
+      notes: saved.notes ?? defaults.notes ?? "",
+      tasks: saved.tasks ?? defaults.tasks,
+      devlogs: saved.devlogs ?? defaults.devlogs,
+    };
+  });
+
+  useRepoSync(React.useCallback((remote) => {
+    const saved = (remote.weekDetails || {})[String(weekNum)];
+    if (!saved) return;
+    setState({
+      notes: saved.notes ?? defaults.notes ?? "",
+      tasks: saved.tasks ?? defaults.tasks,
+      devlogs: saved.devlogs ?? defaults.devlogs,
+    });
+  }, [weekNum, defaults]));
+
+  const patchWeek = (patch) => {
+    setState(prev => {
+      const merged = { ...prev, ...patch };
+      const all = { ...(readRepoState().weekDetails || {}) };
+      all[String(weekNum)] = merged;
+      patchRepoState({ weekDetails: all });
+      return merged;
+    });
+  };
+
+  return [state, patchWeek];
+}
+
+Object.assign(window, { Placeholder, ProgressBar, Badge, PhasePill, SectionHeader, Card, Divider, StatTile, Btn, Tag, WeekRing, STATUS_LABELS, useLocalResources, AddResourceForm, useWeekProgress, useWeekDetailState, computeStatus, readRepoState, patchRepoState });

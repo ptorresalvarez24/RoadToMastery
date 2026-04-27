@@ -13,10 +13,10 @@ Single-page React prototype loaded directly in the browser.
 
 ## Run locally
 
-Use a local HTTP server (recommended):
+Use the built-in server (recommended, enables repo-backed saving):
 
 ```bash
-python -m http.server 8000
+python serve.py
 ```
 
 Then open:
@@ -30,3 +30,13 @@ http://localhost:8000/Road%20To%20Mastery.html
 ```bash
 python scripts/build_bundle.py
 ```
+
+## Persistence
+
+- App state is saved to `storage/app_state.json` when running with `python serve.py`.
+- This includes:
+  - current week selection,
+  - week completion slider values,
+  - added resources and their status updates,
+  - week notes / task checklist / devlog entries.
+- If API calls fail (for example, static-only hosting), the app still keeps local browser storage as a fallback.

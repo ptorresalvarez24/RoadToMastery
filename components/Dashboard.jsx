@@ -1,10 +1,14 @@
 // ─── Dashboard · Bold Design-School Edition ────────────────────────────
 
 function useCurrentWeek() {
-  const stored = parseInt(localStorage.getItem("rtm_current_week") || String(STATS.currentWeek), 10);
+  const stored = parseInt(String((readRepoState().currentWeek || STATS.currentWeek)), 10);
   const [week, setWeekState] = React.useState(stored);
+  React.useEffect(() => {
+    const latest = parseInt(String((readRepoState().currentWeek || STATS.currentWeek)), 10);
+    setWeekState(latest);
+  }, []);
   const setWeek = (n) => {
-    localStorage.setItem("rtm_current_week", String(n));
+    patchRepoState({ currentWeek: n });
     setWeekState(n);
   };
   return [week, setWeek];
